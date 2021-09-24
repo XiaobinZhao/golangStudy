@@ -8,18 +8,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"studygolang/githubAPIIssues"
+	"studygolang/githubAPI"
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime | log.Ldate)
 	//练习 4.10： 修改issues程序，根据问题的时间进行分类，比如不到一个月的、不到一年的、超过一年。
-	//issueTimeCategory := map[string][]*githubAPIIssues.Issue {
+	//issueTimeCategory := map[string][]*githubAPI.Issue {
 	//	"lessMonth": nil,
 	//	"lessYear": nil,
 	//	"moreYear": nil,
 	//}
-	//result, err := githubAPIIssues.SearchIssues(os.Args[1:])
+	//result, err := githubAPI.SearchIssues(os.Args[1:])
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
@@ -51,7 +51,7 @@ func main() {
 		key := input.Text()
 		if strings.HasPrefix(key, "SearchIssues") {
 			keys := strings.Split(key, " ")[1:]
-			result, err := githubAPIIssues.SearchIssues(keys)
+			result, err := githubAPI.SearchIssues(keys)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -61,11 +61,11 @@ func main() {
 			}
 		} else if strings.HasPrefix(key, "CreateIssue") {
 			keys := strings.Split(key, " ")[1:]
-			requestBody := githubAPIIssues.CreateIssueRequest{
+			requestBody := githubAPI.CreateIssueRequest{
 				Title: keys[0],
 				Body:  keys[1],
 			}
-			result, err := githubAPIIssues.CreateIssue(requestBody)
+			result, err := githubAPI.CreateIssue(requestBody)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -73,12 +73,12 @@ func main() {
 			fmt.Printf("%s \n", responseResult)
 		} else if strings.HasPrefix(key, "UpdateIssue") {
 			keys := strings.Split(key, " ")[1:]
-			requestBody := githubAPIIssues.CreateIssueRequest{
+			requestBody := githubAPI.CreateIssueRequest{
 				Title: keys[1],
 				Body:  keys[2],
 			}
 			issueNumber,_ := strconv.ParseInt(keys[0], 10,64)
-			result, err := githubAPIIssues.UpdateIssue(issueNumber, requestBody)
+			result, err := githubAPI.UpdateIssue(issueNumber, requestBody)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -87,7 +87,7 @@ func main() {
 		} else if strings.HasPrefix(key, "CloseIssue") {
 			keys := strings.Split(key, " ")[1:]
 			issueNumber,_ := strconv.ParseInt(keys[0], 10,64)
-			result, err := githubAPIIssues.CloseIssue(issueNumber)
+			result, err := githubAPI.CloseIssue(issueNumber)
 			if err != nil {
 				log.Fatal(err)
 			}

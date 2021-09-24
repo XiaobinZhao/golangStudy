@@ -1,4 +1,4 @@
-package githubAPIIssues
+package githubAPI
 
 import (
 	"bytes"
