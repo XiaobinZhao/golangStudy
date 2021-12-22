@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -21,22 +20,6 @@ func main() {
 }
 
 //!-main
-
-var itemsTemplate = template.Must(template.New("itemslist").Parse(`
-<h1>{{len .}} items</h1>
-<table>
-<tr style='text-align: left'>
-  <th>item</th>
-  <th>price</th>
-</tr>
-{{range $key, $value := .}}
-<tr>
-  <td>{{$key}}</td>
-  <td>{{$value}}</td>
-</tr>
-{{end}}
-</table>
-`))
 
 type dollars float32
 
@@ -69,10 +52,9 @@ func (db database) create(w http.ResponseWriter, req *http.Request) {
 }
 
 func (db database) list(w http.ResponseWriter, req *http.Request) {
-	if err := itemsTemplate.Execute(w, db); err != nil {
-		log.Fatal(err)
+	for item, price := range db {
+		fmt.Fprintf(w, "%s: %s\n", item, price)
 	}
-
 }
 
 func (db database) price(w http.ResponseWriter, req *http.Request) {
