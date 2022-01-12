@@ -40,7 +40,10 @@ func main() {
 				imgchan <- p
 				fmt.Println(count)
 			}(px, py, z)
-			fmt.Printf("after count :%d \n", count)  // 为啥不是一个count一个after count ?
+			fmt.Printf("after count :%d \n", count)
+			// 为啥不是一个count一个after count ?  双层for循环是在main routine执行的，而 go func(){}()匿名函数
+			// 是底层的runtime运行时动态创建，创建之后放入等待调度序列，这期间go func是没有执行,但是不影响main的执行。所以
+			// 会发现after和count会无序的输出
 			point := <- imgchan
 			img.Set(point.x, point.y, point.color)
 		}

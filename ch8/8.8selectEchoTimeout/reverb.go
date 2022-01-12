@@ -56,7 +56,7 @@ func handleConn(c net.Conn) {
 // 这样服务器可以在客户端10秒中没有任何喊话时自动断开连接。
 // 分析：
 // 服务器启动之后，等待客户端连接。客户端连接输入之后，触发handle。handle执行时，先启动一个goroutine进行倒计时，
-// 然后一直等待输入，有输入时，把输入送入chan,在goroutine从chan取数据并重置倒计时。如此循环。知道没有输入，倒计时结束，
+// 然后一直等待输入(for死循环)，有输入时，把输入送入chan,在goroutine从chan取数据并重置倒计时。如此循环。直到没有输入，倒计时结束，
 // 关闭客户端的连接。
 func main() {
 	l, err := net.Listen("tcp", "localhost:8000")
