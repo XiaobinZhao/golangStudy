@@ -68,19 +68,7 @@ func saveAsFile(s, urlStr string) {
 	write.WriteString(s)
 }
 
-func Extract(url, domainUrl string) ([]string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
-		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
-	}
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	bodyStr := string(body)
-	resp.Body.Close()
+func ExtractWithoutRequest(url, domainUrl, bodyStr string, resp *http.Response) ([]string, error) {
 	doc, err := html.Parse(strings.NewReader(bodyStr))
 	saveAsFile(bodyStr, url)
 
@@ -108,6 +96,22 @@ func Extract(url, domainUrl string) ([]string, error) {
 	}
 	forEachNode(doc, visitNode, nil)
 	return links, nil
+}
+
+func Extract(url, domainUrl string) ([]string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	bodyStr := string(body)
+	resp.Body.Close()
+	return ExtractWithoutRequest(url, domainUrl, bodyStr, resp)
 }
 
 //!-Extract
