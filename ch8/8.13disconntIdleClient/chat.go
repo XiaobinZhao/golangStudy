@@ -9,19 +9,13 @@ import (
 )
 
 //!+broadcaster
-
-type clientObject struct {
-	name string
-	latest time.Time
-	message string
-}
-
-type client chan<- clientObject // an outgoing message channel
+type client chan<- string // an outgoing message channel
 
 var (
 	entering = make(chan client)
 	leaving  = make(chan client)
 	messages = make(chan string) // all incoming client messages
+	inputChan = make(chan string)
 )
 
 func broadcaster() {
@@ -32,7 +26,7 @@ func broadcaster() {
 			// Broadcast incoming message to all
 			// clients' outgoing message channels.
 			for cli := range clients {
-				cli <- clientObject{message: msg}
+				cli <- msg
 			}
 
 		case cli := <-entering:
@@ -47,43 +41,61 @@ func broadcaster() {
 
 //!-broadcaster
 
-func disconnectIdleClient(conn net.Conn) {
+func disconnectIdleClient2(conn net.Conn, ch chan string) { // 另一种倒计时的写法
+	for  {
+		select {
+		case <-time.After(5 * time.Minute):
+			conn.Close()
+		case  str := <-inputChan:
+			messages <- str
+		}
+	}
+}
 
+func disconnectIdleClient(conn net.Conn, ch chan string) {
+	ticker := time.NewTicker(1 * time.Second)
+
+	for countdown := 10; countdown > 0; countdown-- {
+		fmt.Printf("countdown: %d \n", countdown)
+		select {
+		case  <-ticker.C:
+			// do nothing
+		case in := <-inputChan:
+			fmt.Println("input something, countdown reset!")
+			countdown = 10
+			messages <- in
+		}
+	}
+	ticker.Stop()
+	fmt.Println("countdown over, close conn!")
+	conn.Close()
 }
 
 
 //!+handleConn
-func handleConn(conn net.Conn) {
-	clientChan := make(chan clientObject)
-	//ch := make(chan string) // 用于输出当前client消息
-	go clientWriter(conn, clientChan)
+func handleConn(conn net.Conn, ch chan string) {
+	go clientWriter(conn, ch)
 
 	who := conn.RemoteAddr().String()
-	client := clientObject{
-		name: who,
-		latest: time.Now(),
-		message: "You are " + who,
-	}
-	clientChan <- client
+	ch <- "You are " + who
 	messages <- who + " has arrived"
-
-	entering <- clientChan  // enter事件需要使用clientObject
+	entering <- ch
 
 	input := bufio.NewScanner(conn)
+
 	for input.Scan() {
-		messages <- who + ": " + input.Text()
-		client.latest = time.Now()
+		inputChan <- who + ": " + input.Text()
+		//messages <- who + ": " + input.Text()
 	}
 	// NOTE: ignoring potential errors from input.Err()
-
-	leaving <- clientChan
+	leaving <- ch
 	messages <- who + " has left"
 	conn.Close()
 }
 
-func clientWriter(conn net.Conn, ch <-chan clientObject) {
-	for client := range ch {
-		fmt.Fprintln(conn, client.message) // NOTE: ignoring network errors
+func clientWriter(conn net.Conn, ch <-chan string) {
+	for msg := range ch {
+		fmt.Fprintln(conn, msg) // NOTE: ignoring network errors
 	}
 }
 
@@ -104,8 +116,9 @@ func main() {
 			log.Print(err)
 			continue
 		}
-		go handleConn(conn)
-		go disconnectIdleClient(conn)
+		ch := make(chan string)
+		go handleConn(conn, ch)
+		go disconnectIdleClient(conn, ch)
 	}
 }
 
