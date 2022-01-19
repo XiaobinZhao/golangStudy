@@ -19,22 +19,18 @@ func mirroredQuery() {
 	}
 }
 
-func cancelled() bool {
-	select {
-	case <-done:
-		return true
-	default:
-		return false
-	}
-}
-
 func request(hostname string) string {
 	ctx, cancel := context.WithCancel(context.Background())
 	req, _ := http.NewRequestWithContext(ctx,"GET", hostname, nil)
-	if cancelled() {  // 执行的太快了么？ cancel已经不能生效了
-		fmt.Printf("%s canceled.", hostname)
-		cancel()
-	}
+	go func() {
+		for {
+			select {
+			case <-done:
+				fmt.Printf("%s canceled.", hostname)
+				cancel()
+			}
+		}
+	}()
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Sprintf("%s request failed.", hostname)
